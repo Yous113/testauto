@@ -31,13 +31,24 @@ jobs:
           # Push the new branch to GitHub
           git push origin $BRANCH_NAME
 
-      - name: Add a Comment to the Issue
+      - name: Link Branch to the Issue
         uses: actions/github-script@v6
         with:
           script: |
-            github.issues.createComment({
-              issue_number: ${{ github.event.issue.number }},
+            const issueNumber = context.issue.number;
+            const branchName = `issue-${issueNumber}-${context.payload.issue.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 50)}`;
+
+            const updatedBody = `
+              ${context.payload.issue.body}
+
+              ### Linked Branch:
+              \`${branchName}\`
+            `;
+
+            // Update the issue body to include the new branch reference
+            github.issues.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `A new branch has been created: \`${BRANCH_NAME}\`.`
-            })
+              issue_number: issueNumber,
+              body: updatedBody
+            });
